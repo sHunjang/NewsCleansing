@@ -4,9 +4,10 @@ from app.db.session import engine
 from app.db.base import Base
 from app.api.user.router import router as user_router
 import asyncio # Required for asyncio.sleep in retry logic
+import sys
 
-MAX_DB_RETRIES = 1  # Adjust as needed
-RETRY_DB_DELAY = 1  # Seconds to wait between retries
+MAX_DB_RETRIES = 5  # Adjust as needed
+RETRY_DB_DELAY = 5  # Seconds to wait between retries
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -20,6 +21,7 @@ async def lifespan(app: FastAPI):
         try:
             print(f"Attempting to connect to database and create tables (Attempt {i+1}/{MAX_DB_RETRIES})...")
             # Attempt to connect to the database and run migrations
+            print(engine)
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
             print("✅ 데이터베이스 테이블이 성공적으로 생성되었습니다.")
@@ -36,7 +38,7 @@ async def lifespan(app: FastAPI):
 
     if not connected_to_db:
         print("🚨 FastAPI 애플리케이션이 데이터베이스 연결 없이 시작될 수 없습니다. 확인해주세요.")
-        sys.exit(1)  # Force exit if connection fails
+        sys.exit(1)  # Force exit if connection failss
 
     yield  # Application runs after successful startup
 
